@@ -116,10 +116,10 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
-          await octokit.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: `The following Java files are missing corresponding test files:${{ env.missing_files }}. If these files are not testable, please provide a justification in the following format: "Tests not required: <justification>". Justification not found.`
-          });
+          github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `The following Java files are missing corresponding test files:${{ env.missing_files }}. If these files are not testable, please provide a justification in the following format: "Tests not required: <justification>". Justification not found.`
+            })
+            
