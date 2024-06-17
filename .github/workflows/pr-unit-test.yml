@@ -101,7 +101,7 @@ jobs:
             else
               echo "Justification not found"
               echo "justification=not found" >> $GITHUB_ENV
-              echo "##[error]Missing tests and no justification found for the following files:${MISSING_FILES}"
+              echo "::error::Missing tests and no justification found for the following files:${MISSING_FILES}"
               exit 1
             fi
           else
