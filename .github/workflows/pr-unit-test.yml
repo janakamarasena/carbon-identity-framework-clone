@@ -20,12 +20,16 @@ jobs:
       uses: actions/checkout@v2
       with:
         ref: ${{ github.event.pull_request.base.ref }}
+        fetch-depth: 0
 
     - name: Set up JDK
       uses: actions/setup-java@v2
       with:
         java-version: '11' # or the version of JDK your project uses
         distribution: 'adopt' # Use 'adopt', 'zulu', 'temurin', etc. depending on your preference
+
+    - name: Install GitHub CLI
+      run: sudo apt-get install -y gh
 
     - name: Check for 'no-tests-needed' label
       id: check_label
@@ -64,7 +68,7 @@ jobs:
             echo "missing_files=$MISSING_FILES" >> $GITHUB_ENV
 
             # Fetch comments to check for justification
-            COMMENTS=$(gh pr view ${{ github.event.pull_request.number }} --comments)
+            COMMENTS=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[].body')
             JUSTIFICATION_FOUND=false
             for COMMENT in $COMMENTS; do
               if [[ $COMMENT == Tests\ not\ required:* ]]; then
