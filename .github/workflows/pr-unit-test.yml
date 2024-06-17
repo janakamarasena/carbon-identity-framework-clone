@@ -33,9 +33,12 @@ jobs:
     - name: Check for 'no-tests-needed' label
       id: check_label
       run: |
+        echo "Checking for 'no-tests-needed' label"
         echo "has_label=false" >> $GITHUB_ENV
         for label in "${{ github.event.pull_request.labels[*].name }}"; do
+          echo "Found label: $label"
           if [[ "$label" == "no-tests-needed" ]]; then
+            echo "Label 'no-tests-needed' found"
             echo "has_label=true" >> $GITHUB_ENV
             break
           fi
@@ -44,16 +47,22 @@ jobs:
     - name: Check for test files and justification
       id: check_tests_justification
       run: |
+        echo "Checking for missing test files and justification"
+        echo "Label check result: ${{ env.has_label }}"
         if [ "${{ env.has_label }}" != "true" ]; then
           # List all changed Java files
+          echo "Listing changed Java files"
           CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- '*.java')
+          echo "Changed Java files: $CHANGED_FILES"
           
           # Check for corresponding test files
           MISSING_TESTS=false
           MISSING_FILES=""
           for FILE in $CHANGED_FILES; do
+            echo "Processing file: $FILE"
             if [[ $FILE != *'/test/'* && $FILE != *'/tests/'* ]]; then
               TEST_FILE=$(echo $FILE | sed 's/src/test/g')
+              echo "Checking for test file: $TEST_FILE"
               if ! git diff --quiet ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- "$TEST_FILE"; then
                 echo "Missing test file for $FILE"
                 MISSING_TESTS=true
@@ -63,28 +72,37 @@ jobs:
           done
 
           if [ "$MISSING_TESTS" = true ]; then
+            echo "Missing tests found"
             echo "missing_tests=true" >> $GITHUB_ENV
             echo "missing_files=$MISSING_FILES" >> $GITHUB_ENV
 
             # Fetch comments to check for justification
+            echo "Fetching PR comments"
             COMMENTS=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[].body')
+            echo "PR Comments: $COMMENTS"
             JUSTIFICATION_FOUND=false
             while read -r COMMENT; do
+              echo "Processing comment: $COMMENT"
               if [[ $COMMENT == Tests\ not\ required:* ]]; then
+                echo "Justification found: $COMMENT"
                 JUSTIFICATION_FOUND=true
                 break
               fi
             done <<< "$COMMENTS"
 
             if [ "$JUSTIFICATION_FOUND" = true ]; then
+              echo "Justification provided"
               echo "justification=provided" >> $GITHUB_ENV
             else
+              echo "Justification not found"
               echo "justification=not found" >> $GITHUB_ENV
             fi
           else
+            echo "No missing tests"
             echo "missing_tests=false" >> $GITHUB_ENV
           fi
         else
+          echo "Label 'no-tests-needed' found, skipping test check"
           echo "missing_tests=false" >> $GITHUB_ENV
         fi
 
