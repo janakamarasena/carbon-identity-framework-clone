@@ -19,7 +19,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
       with:
-        ref: ${{ github.event.pull_request.base.ref }}
         fetch-depth: 0
 
     - name: Set up JDK
@@ -70,12 +69,12 @@ jobs:
             # Fetch comments to check for justification
             COMMENTS=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[].body')
             JUSTIFICATION_FOUND=false
-            for COMMENT in $COMMENTS; do
+            while read -r COMMENT; do
               if [[ $COMMENT == Tests\ not\ required:* ]]; then
                 JUSTIFICATION_FOUND=true
                 break
               fi
-            done
+            done <<< "$COMMENTS"
 
             if [ "$JUSTIFICATION_FOUND" = true ]; then
               echo "justification=provided" >> $GITHUB_ENV
