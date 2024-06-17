@@ -116,9 +116,8 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const { GITHUB_TOKEN } = process.env;
-          const octokit = github.getOctokit(GITHUB_TOKEN);
-          await octokit.issues.createComment({
+          const { context, github } = require('@actions/github');
+          await github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
             issue_number: context.issue.number,
