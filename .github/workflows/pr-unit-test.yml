@@ -62,11 +62,13 @@ jobs:
             echo "Processing file: $FILE"
             if [[ $FILE != *'/test/'* && $FILE != *'/tests/'* ]]; then
               TEST_FILE=$(echo $FILE | sed 's/src\/main/src\/test/g')
-              echo "Checking for test file: $TEST_FILE"
-              if ! git diff --quiet ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- "$TEST_FILE"; then
+              echo "Constructed test file path: $TEST_FILE"
+              if ! test -f "$TEST_FILE"; then
                 echo "Missing test file for $FILE"
                 MISSING_TESTS=true
                 MISSING_FILES="$MISSING_FILES\n$FILE"
+              else
+                echo "Found test file: $TEST_FILE"
               fi
             fi
           done
