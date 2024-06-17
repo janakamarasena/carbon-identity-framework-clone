@@ -12,7 +12,7 @@ on:
 
 jobs:
   check-tests:
-    if: github.event.pull_request.draft == false
+    if: ${{ github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
 
     steps:
@@ -116,9 +116,11 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          github.issues.createComment({
+          const { GITHUB_TOKEN } = process.env;
+          const octokit = github.getOctokit(GITHUB_TOKEN);
+          await octokit.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
             issue_number: context.issue.number,
             body: `The following Java files are missing corresponding test files:${{ env.missing_files }}. If these files are not testable, please provide a justification in the following format: "Tests not required: <justification>". Justification not found.`
-          })
+          });
