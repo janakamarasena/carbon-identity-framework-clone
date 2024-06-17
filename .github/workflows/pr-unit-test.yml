@@ -46,6 +46,8 @@ jobs:
 
     - name: Check for test files and justification
       id: check_tests_justification
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         echo "Checking for missing test files and justification"
         echo "Label check result: ${{ env.has_label }}"
