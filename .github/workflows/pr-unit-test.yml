@@ -35,7 +35,7 @@ jobs:
       run: |
         echo "Checking for 'no-tests-needed' label"
         echo "has_label=false" >> $GITHUB_ENV
-        for label in "${{ github.event.pull_request.labels[*].name }}"; do
+        for label in "${{ github.event.pull_request.labels[*] }}"; do
           echo "Found label: $label"
           if [[ "$label" == "no-tests-needed" ]]; then
             echo "Label 'no-tests-needed' found"
@@ -61,7 +61,7 @@ jobs:
           for FILE in $CHANGED_FILES; do
             echo "Processing file: $FILE"
             if [[ $FILE != *'/test/'* && $FILE != *'/tests/'* ]]; then
-              TEST_FILE=$(echo $FILE | sed 's/src/test/g')
+              TEST_FILE=$(echo $FILE | sed 's/src\/main/src\/test/g')
               echo "Checking for test file: $TEST_FILE"
               if ! git diff --quiet ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- "$TEST_FILE"; then
                 echo "Missing test file for $FILE"
