@@ -26,6 +26,8 @@ import org.wso2.carbon.identity.base.IdentityException;
 public class ApplicationAuthenticatorException extends IdentityException {
 
     private static final long serialVersionUID = 2773312931823689778L;
+    private String message;
+    private Throwable cause;
 
     public ApplicationAuthenticatorException(String message) {
         super(message);
@@ -33,5 +35,11 @@ public class ApplicationAuthenticatorException extends IdentityException {
 
     public ApplicationAuthenticatorException(String message, Throwable cause) {
         super(message, cause);
+    }
+
+    private void setApplicationAuthenticatorException(String message, Throwable cause) {
+
+        this.message = message;
+        this.cause = cause;
     }
 }
