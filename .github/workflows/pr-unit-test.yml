@@ -18,6 +18,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.base.ref }}
 
     - name: Set up JDK
       uses: actions/setup-java@v2
@@ -41,7 +43,7 @@ jobs:
       run: |
         if [ "${{ env.has_label }}" != "true" ]; then
           # List all changed Java files
-          CHANGED_FILES=$(git diff --name-only origin/main HEAD -- '*.java')
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- '*.java')
           
           # Check for corresponding test files
           MISSING_TESTS=false
@@ -49,7 +51,7 @@ jobs:
           for FILE in $CHANGED_FILES; do
             if [[ $FILE != *'/test/'* && $FILE != *'/tests/'* ]]; then
               TEST_FILE=$(echo $FILE | sed 's/src/test/g')
-              if ! git diff --quiet origin/main HEAD -- "$TEST_FILE"; then
+              if ! git diff --quiet ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- "$TEST_FILE"; then
                 echo "Missing test file for $FILE"
                 MISSING_TESTS=true
                 MISSING_FILES="$MISSING_FILES\n$FILE"
