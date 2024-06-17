@@ -111,14 +111,9 @@ jobs:
         fi
 
     - name: Add PR comment if tests are missing and no justification
-      if: env.missing_tests == 'true' && env.justification == 'not found'
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-          # Using GitHub API to create a comment on the PR
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          COMMENT="checklist comment here"
-          GITHUB_TOKEN=${{ secrets. GITHUB_TOKEN }}
-          COMMENT_URL="https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments"
-          curl -s -H "Authorization: token ${GITHUB_TOKEN}" -X POST $COMMENT_URL -d "{\"body\":\"$COMMENT\"}"
+      uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            **Hello MAIN**
+      
             
