@@ -97,23 +97,24 @@ jobs:
             if [ "$JUSTIFICATION_FOUND" = true ]; then
               echo "Justification provided"
               echo "justification=provided" >> $GITHUB_ENV
+              echo "::set-output name=justification_status::Justification provided for missing tests"
             else
               echo "Justification not found"
               echo "justification=not found" >> $GITHUB_ENV
+              echo "::set-output name=justification_status::Missing tests and no justification found"
             fi
           else
             echo "No missing tests"
             echo "missing_tests=false" >> $GITHUB_ENV
+            echo "::set-output name=justification_status::All required tests are present"
           fi
         else
           echo "Label 'no-tests-needed' found, skipping test check"
           echo "missing_tests=false" >> $GITHUB_ENV
+          echo "::set-output name=justification_status::'no-tests-needed' label found, skipping test check"
         fi
 
-    - name: Add PR comment if tests are missing and no justification
-      uses: mshick/add-pr-comment@v2
-        with:
-          message: |
-            **Hello MAIN**
-      
-            
+    - name: Print Justification Status
+      if: steps.check_tests_justification.outputs.justification_status
+      run: |
+        echo "Justification Status: ${{ steps.check_tests_justification.outputs.justification_status }}"
