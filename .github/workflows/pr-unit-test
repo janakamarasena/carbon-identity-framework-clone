@@ -1,0 +1,121 @@
+name: Ensure Tests for Java Code
+
+on: 
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - '**/*.java'
+  pull_request_review:
+    types: [submitted]
+    paths:
+      - '**/*.java'
+
+jobs:
+  check-tests:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up JDK
+      uses: actions/setup-java@v2
+      with:
+        java-version: '11' # or the version of JDK your project uses
+
+    - name: Check for 'no-tests-needed' label
+      id: check_label
+      run: |
+        echo "has_label=false" >> $GITHUB_ENV
+        for label in "${{ github.event.pull_request.labels[*].name }}"; do
+          if [[ "$label" == "no-tests-needed" ]]; then
+            echo "has_label=true" >> $GITHUB_ENV
+            break
+          fi
+        done
+
+    - name: Check for test files
+      id: check_tests
+      if: env.has_label != 'true'
+      run: |
+        # List all changed Java files
+        CHANGED_FILES=$(git diff --name-only origin/main HEAD -- '*.java')
+        
+        # Check for corresponding test files
+        MISSING_TESTS=false
+        MISSING_FILES=""
+        for FILE in $CHANGED_FILES; do
+          if [[ $FILE != *'/test/'* && $FILE != *'/tests/'* ]]; then
+            TEST_FILE=$(echo $FILE | sed 's/src/test/g')
+            if ! git diff --quiet origin/main HEAD -- "$TEST_FILE"; then
+              echo "Missing test file for $FILE"
+              MISSING_TESTS=true
+              MISSING_FILES="$MISSING_FILES\n$FILE"
+            fi
+          fi
+        done
+
+        echo "missing_tests=$MISSING_TESTS" >> $GITHUB_ENV
+        echo "missing_files=$MISSING_FILES" >> $GITHUB_ENV
+
+    - name: Add PR comment if tests are missing
+      if: env.missing_tests == 'true'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: `The following Java files are missing corresponding test files:${{ env.missing_files }}. If these files are not testable, please provide a justification in the following format: "Tests not required: <justification>".`
+          })
+
+  check-justification:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    needs: check-tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Fetch comments
+      id: fetch_comments
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const comments = await github.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number
+          });
+          return { comments: comments.data };
+
+    - name: Check for justification
+      id: check_justification
+      run: |
+        JUSTIFICATION="justification not found"
+        for comment in $(jq -r '.comments[].body' <<< "${{ steps.fetch_comments.outputs.comments }}"); do
+          if [[ $comment == Tests\ not\ required:* ]]; then
+            JUSTIFICATION="${comment#Tests not required: }"
+            break
+          fi
+        done
+
+        echo "justification=$JUSTIFICATION" >> $GITHUB_ENV
+
+    - name: Comment on PR if justification is missing
+      if: env.justification == 'justification not found'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          github.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: "Tests are missing for some Java files and no justification was found. Please provide a justification in the following format: 'Tests not required: <justification>'."
+          })
